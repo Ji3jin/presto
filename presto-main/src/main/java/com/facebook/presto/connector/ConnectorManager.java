@@ -294,6 +294,7 @@ public class ConnectorManager
         metadataManager.getTablePropertyManager().removeProperties(connectorId);
         metadataManager.getSchemaPropertyManager().removeProperties(connectorId);
         metadataManager.getSessionPropertyManager().removeConnectorSessionProperties(connectorId);
+        metadataManager.getColumnPropertyManager().removeProperties(connectorId);
 
         MaterializedConnector materializedConnector = connectors.remove(connectorId);
         if (materializedConnector != null) {

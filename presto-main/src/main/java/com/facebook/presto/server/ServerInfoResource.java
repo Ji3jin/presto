@@ -13,9 +13,9 @@
  */
 package com.facebook.presto.server;
 
+import com.facebook.presto.catalog.DynamicCatalogStore;
 import com.facebook.presto.client.NodeVersion;
 import com.facebook.presto.client.ServerInfo;
-import com.facebook.presto.metadata.StaticCatalogStore;
 import com.facebook.presto.spi.NodeState;
 import io.airlift.node.NodeInfo;
 
@@ -46,12 +46,13 @@ public class ServerInfoResource
     private final NodeVersion version;
     private final String environment;
     private final boolean coordinator;
-    private final StaticCatalogStore catalogStore;
+    //private final StaticCatalogStore catalogStore;
+    private final DynamicCatalogStore catalogStore;
     private final GracefulShutdownHandler shutdownHandler;
     private final long startTime = System.nanoTime();
 
     @Inject
-    public ServerInfoResource(NodeVersion nodeVersion, NodeInfo nodeInfo, ServerConfig serverConfig, StaticCatalogStore catalogStore, GracefulShutdownHandler shutdownHandler)
+    public ServerInfoResource(NodeVersion nodeVersion, NodeInfo nodeInfo, ServerConfig serverConfig, DynamicCatalogStore catalogStore, GracefulShutdownHandler shutdownHandler)
     {
         this.version = requireNonNull(nodeVersion, "nodeVersion is null");
         this.environment = requireNonNull(nodeInfo, "nodeInfo is null").getEnvironment();

@@ -18,6 +18,9 @@ import com.facebook.presto.PagesIndexPageSorter;
 import com.facebook.presto.SystemSessionProperties;
 import com.facebook.presto.block.BlockEncodingManager;
 import com.facebook.presto.block.BlockJsonSerde;
+import com.facebook.presto.catalog.CatalogResource;
+import com.facebook.presto.catalog.DynamicCatalogStore;
+import com.facebook.presto.catalog.DynamicCatalogStoreConfig;
 import com.facebook.presto.client.NodeVersion;
 import com.facebook.presto.client.ServerInfo;
 import com.facebook.presto.connector.ConnectorManager;
@@ -67,8 +70,6 @@ import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.MetadataManager;
 import com.facebook.presto.metadata.SchemaPropertyManager;
 import com.facebook.presto.metadata.SessionPropertyManager;
-import com.facebook.presto.metadata.StaticCatalogStore;
-import com.facebook.presto.metadata.StaticCatalogStoreConfig;
 import com.facebook.presto.metadata.TablePropertyManager;
 import com.facebook.presto.metadata.ViewDefinition;
 import com.facebook.presto.operator.ExchangeClientConfig;
@@ -192,7 +193,8 @@ public class ServerMainModule
             binder.bind(SessionSupplier.class).to(NoOpSessionSupplier.class).in(Scopes.SINGLETON);
 
             // Install no-op resource group manager on workers, since only coordinators manage resource groups.
-            binder.bind(ResourceGroupManager.class).to(NoOpResourceGroupManager.class).in(Scopes.SINGLETON);
+            binder.bind(ResourceGroupManager.class).to(NoOpResourceGroupManager.class)
+                    .in(Scopes.SINGLETON);
 
             // Install no-op transaction manager on workers, since only coordinators manage transactions.
             binder.bind(TransactionManager.class).to(NoOpTransactionManager.class).in(Scopes.SINGLETON);
@@ -201,9 +203,10 @@ public class ServerMainModule
             binder.bind(FailureDetector.class).to(NoOpFailureDetector.class).in(Scopes.SINGLETON);
 
             // HACK: this binding is needed by SystemConnectorModule, but will only be used on the coordinator
-            binder.bind(QueryManager.class).toInstance(newProxy(QueryManager.class, (proxy, method, args) -> {
-                throw new UnsupportedOperationException();
-            }));
+            binder.bind(QueryManager.class)
+                    .toInstance(newProxy(QueryManager.class, (proxy, method, args) -> {
+                        throw new UnsupportedOperationException();
+                    }));
         }
 
         install(new InternalCommunicationModule());
@@ -265,11 +268,13 @@ public class ServerMainModule
         install(installModuleIf(
                 NodeSchedulerConfig.class,
                 config -> LEGACY.equalsIgnoreCase(config.getNetworkTopology()),
-                moduleBinder -> moduleBinder.bind(NetworkTopology.class).to(LegacyNetworkTopology.class).in(Scopes.SINGLETON)));
+                moduleBinder -> moduleBinder.bind(NetworkTopology.class).to(LegacyNetworkTopology.class)
+                        .in(Scopes.SINGLETON)));
         install(installModuleIf(
                 NodeSchedulerConfig.class,
                 config -> FLAT.equalsIgnoreCase(config.getNetworkTopology()),
-                moduleBinder -> moduleBinder.bind(NetworkTopology.class).to(FlatNetworkTopology.class).in(Scopes.SINGLETON)));
+                moduleBinder -> moduleBinder.bind(NetworkTopology.class).to(FlatNetworkTopology.class)
+                        .in(Scopes.SINGLETON)));
 
         // task execution
         jaxrsBinder(binder).bind(TaskResource.class);
@@ -323,7 +328,8 @@ public class ServerMainModule
         jaxrsBinder(binder).bind(PagesResponseWriter.class);
 
         // exchange client
-        binder.bind(new TypeLiteral<ExchangeClientSupplier>() {}).to(ExchangeClientFactory.class).in(Scopes.SINGLETON);
+        binder.bind(new TypeLiteral<ExchangeClientSupplier>() {
+        }).to(ExchangeClientFactory.class).in(Scopes.SINGLETON);
         httpClientBinder(binder).bindHttpClient("exchange", ForExchange.class)
                 .withTracing()
                 .withFilter(GenerateTraceTokenRequestFilter.class)
@@ -359,10 +365,15 @@ public class ServerMainModule
         binder.bind(PageSinkProvider.class).to(PageSinkManager.class).in(Scopes.SINGLETON);
 
         // metadata
-        binder.bind(StaticCatalogStore.class).in(Scopes.SINGLETON);
-        configBinder(binder).bindConfig(StaticCatalogStoreConfig.class);
+        //binder.bind(StaticCatalogStore.class).in(Scopes.SINGLETON);
+        binder.bind(DynamicCatalogStore.class).in(Scopes.SINGLETON);
+        //configBinder(binder).bindConfig(StaticCatalogStoreConfig.class);
+        configBinder(binder).bindConfig(DynamicCatalogStoreConfig.class);
         binder.bind(MetadataManager.class).in(Scopes.SINGLETON);
         binder.bind(Metadata.class).to(MetadataManager.class).in(Scopes.SINGLETON);
+
+        //catalog
+        jaxrsBinder(binder).bind(CatalogResource.class);
 
         // type
         binder.bind(TypeRegistry.class).in(Scopes.SINGLETON);
@@ -395,7 +406,8 @@ public class ServerMainModule
         jsonBinder(binder).addDeserializerBinding(Slice.class).to(SliceDeserializer.class);
         jsonBinder(binder).addSerializerBinding(Expression.class).to(ExpressionSerializer.class);
         jsonBinder(binder).addDeserializerBinding(Expression.class).to(ExpressionDeserializer.class);
-        jsonBinder(binder).addDeserializerBinding(FunctionCall.class).to(FunctionCallDeserializer.class);
+        jsonBinder(binder).addDeserializerBinding(FunctionCall.class)
+                .to(FunctionCallDeserializer.class);
 
         // split monitor
         binder.bind(SplitMonitor.class).in(Scopes.SINGLETON);
@@ -438,15 +450,18 @@ public class ServerMainModule
         binder.bind(PageSorter.class).to(PagesIndexPageSorter.class).in(Scopes.SINGLETON);
 
         // PageIndexer
-        binder.bind(PageIndexerFactory.class).to(GroupByHashPageIndexerFactory.class).in(Scopes.SINGLETON);
+        binder.bind(PageIndexerFactory.class).to(GroupByHashPageIndexerFactory.class)
+                .in(Scopes.SINGLETON);
 
         // Finalizer
         binder.bind(FinalizerService.class).in(Scopes.SINGLETON);
 
         // Spiller
         binder.bind(SpillerFactory.class).to(GenericSpillerFactory.class).in(Scopes.SINGLETON);
-        binder.bind(SingleStreamSpillerFactory.class).to(FileSingleStreamSpillerFactory.class).in(Scopes.SINGLETON);
-        binder.bind(PartitioningSpillerFactory.class).to(GenericPartitioningSpillerFactory.class).in(Scopes.SINGLETON);
+        binder.bind(SingleStreamSpillerFactory.class).to(FileSingleStreamSpillerFactory.class)
+                .in(Scopes.SINGLETON);
+        binder.bind(PartitioningSpillerFactory.class).to(GenericPartitioningSpillerFactory.class)
+                .in(Scopes.SINGLETON);
         binder.bind(SpillerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(SpillerFactory.class).withGeneratedName();
         binder.bind(LocalSpillManager.class).in(Scopes.SINGLETON);
@@ -461,7 +476,8 @@ public class ServerMainModule
     @ForExchange
     public static ScheduledExecutorService createExchangeExecutor(ExchangeClientConfig config)
     {
-        return newScheduledThreadPool(config.getClientThreads(), daemonThreadsNamed("exchange-client-%s"));
+        return newScheduledThreadPool(config.getClientThreads(),
+                daemonThreadsNamed("exchange-client-%s"));
     }
 
     @Provides
@@ -475,7 +491,8 @@ public class ServerMainModule
     @Provides
     @Singleton
     @ForAsyncHttp
-    public static BoundedExecutor createAsyncHttpResponseExecutor(@ForAsyncHttp ExecutorService coreExecutor, TaskManagerConfig config)
+    public static BoundedExecutor createAsyncHttpResponseExecutor(
+            @ForAsyncHttp ExecutorService coreExecutor, TaskManagerConfig config)
     {
         return new BoundedExecutor(coreExecutor, config.getHttpResponseThreads());
     }
