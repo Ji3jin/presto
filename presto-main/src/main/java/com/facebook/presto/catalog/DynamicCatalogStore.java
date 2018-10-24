@@ -49,7 +49,6 @@ public class DynamicCatalogStore
     private final DynamicCatalogStoreConfig config;
     private final ScheduledExecutorService scheduledService;
     private final Announcer announcer;
-    private final CatalogLoader catalogLoader;
 
     @Inject
     public DynamicCatalogStore(ConnectorManager connectorManager, DynamicCatalogStoreConfig config,
@@ -61,7 +60,6 @@ public class DynamicCatalogStore
                 .copyOf(firstNonNull(config.getDisabledCatalogs(), ImmutableList.of()));
         this.scheduledService = Executors.newSingleThreadScheduledExecutor();
         this.announcer = announcer;
-        catalogLoader = new CatalogLoader(config);
     }
 
     public boolean areCatalogsLoaded()
@@ -94,6 +92,7 @@ public class DynamicCatalogStore
 
     public void load() throws Exception
     {
+        CatalogLoader catalogLoader = CatalogLoaderFactory.get(config);
         Map<String, CatalogInfo> catalogInfoMap = catalogLoader.load();
         catalogInfoMap.forEach((key, catalogInfo) -> {
             loadCatalog(catalogInfo);
@@ -104,6 +103,7 @@ public class DynamicCatalogStore
     public void reload()
     {
         try {
+            CatalogLoader catalogLoader = CatalogLoaderFactory.get(config);
             Map<String, CatalogInfo> catalogInfoMap = catalogLoader.load();
             Map<String, CatalogInfo> deletedCatalogMap = getDeletedCatalog(catalogInfoCache,
                     catalogInfoMap);

@@ -13,17 +13,7 @@
   */
 package com.facebook.presto.catalog;
 
-import java.util.Map;
-
-public abstract class CatalogLoader
+public enum CatalogSourceType
 {
-    protected final DynamicCatalogStoreConfig config;
-
-    public CatalogLoader(DynamicCatalogStoreConfig config)
-    {
-        this.config = config;
-    }
-
-    public abstract Map<String, CatalogInfo> load()
-            throws Exception;
+    MYSQL, FILE
 }

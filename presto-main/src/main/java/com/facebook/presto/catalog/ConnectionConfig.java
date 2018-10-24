@@ -25,6 +25,8 @@ public class ConnectionConfig
     {
     }
 
+    public static String defaultCreator = "admin";
+
     public static String getCatalogSql = "SELECT * FROM catalog";
 
     public static String insertCatalogSql = "insert into catalog "

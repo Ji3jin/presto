@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.LegacyConfig;
 
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class DynamicCatalogStoreConfig
     private List<String> disabledCatalogs;
     private File catalogConfigurationDir = new File("etc/catalog/");
     private int catalogDetectTimeInterval = 10;
+    private CatalogSourceType catalogSourceType;
     private String catalogSourceMysqlUrl;
     private String catalogSourceMysqlUser;
     private String catalogSourceMysqlPassword;
@@ -61,6 +63,19 @@ public class DynamicCatalogStoreConfig
     {
         this.disabledCatalogs = (catalogs == null) ? null : ImmutableList.copyOf(catalogs);
         return this;
+    }
+
+    @Config("catalog.source.type")
+    public DynamicCatalogStoreConfig setCatalogSourceType(String type)
+    {
+        this.catalogSourceType = CatalogSourceType.valueOf(type);
+        return this;
+    }
+
+    @NotNull
+    public CatalogSourceType getCatalogSourceType()
+    {
+        return this.catalogSourceType;
     }
 
     @Config("catalog.detect.time.interval")

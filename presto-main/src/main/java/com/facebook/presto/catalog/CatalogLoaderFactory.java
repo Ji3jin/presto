@@ -13,17 +13,25 @@
   */
 package com.facebook.presto.catalog;
 
-import java.util.Map;
+import static com.facebook.presto.catalog.CatalogSourceType.FILE;
+import static com.facebook.presto.catalog.CatalogSourceType.MYSQL;
 
-public abstract class CatalogLoader
+public class CatalogLoaderFactory
 {
-    protected final DynamicCatalogStoreConfig config;
-
-    public CatalogLoader(DynamicCatalogStoreConfig config)
+    private CatalogLoaderFactory()
     {
-        this.config = config;
     }
 
-    public abstract Map<String, CatalogInfo> load()
-            throws Exception;
+    public static CatalogLoader get(DynamicCatalogStoreConfig config)
+            throws Exception
+    {
+        switch (config.getCatalogSourceType()) {
+            case MYSQL:
+                return new CatalogDbLoader(config);
+            case FILE:
+                return new CatalogFileLoader(config);
+            default:
+                throw new Exception("unsupported source type!");
+        }
+    }
 }
