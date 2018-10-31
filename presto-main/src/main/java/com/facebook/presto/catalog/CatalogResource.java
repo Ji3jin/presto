@@ -16,11 +16,7 @@ package com.facebook.presto.catalog;
 import io.airlift.json.JsonCodec;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -50,7 +46,7 @@ public class CatalogResource
         return Response.ok("Hello Presto").build();
     }
 
-    @PUT
+    @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createCatalog(CatalogInfo catalogInfo)
@@ -63,6 +59,25 @@ public class CatalogResource
             preparedStatement.setString(2, catalogInfo.getConnectorName());
             preparedStatement.setString(3, catalogInfo.getCreator());
             preparedStatement.setString(4, codec.toJson(catalogInfo.getProperties()));
+            preparedStatement.executeUpdate();
+        }
+        catch (SQLException e) {
+            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+        }
+        return Response.status(Response.Status.OK).build();
+    }
+
+    @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteCatalog(CatalogInfo catalogInfo)
+    {
+        requireNonNull(catalogInfo, "catalogName is null");
+        try (Connection connection = ConnectionConfig.openConnection(config);
+             PreparedStatement preparedStatement = connection.prepareStatement(ConnectionConfig.deleteCatalogSql)) {
+            preparedStatement.setString(1, catalogInfo.getCatalogName());
+            preparedStatement.setString(2, catalogInfo.getConnectorName());
+            preparedStatement.setString(3, catalogInfo.getCreator());
             preparedStatement.executeUpdate();
         }
         catch (SQLException e) {
