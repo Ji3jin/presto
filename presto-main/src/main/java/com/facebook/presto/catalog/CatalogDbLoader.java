@@ -27,7 +27,7 @@ import java.util.Map;
 import static io.airlift.json.JsonCodec.jsonCodec;
 
 public class CatalogDbLoader
-    extends CatalogLoader
+        extends CatalogLoader
 {
     private static final Logger log = Logger.get(CatalogDbLoader.class);
 
