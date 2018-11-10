@@ -33,7 +33,6 @@ public class ConnectionConfig
     public static String deleteCatalogSql = "delete from catalog where "
             + "catalog_name=? and connector_name=? and creator=?";
 
-
     public static Connection openConnection(DynamicCatalogStoreConfig config)
             throws SQLException
     {

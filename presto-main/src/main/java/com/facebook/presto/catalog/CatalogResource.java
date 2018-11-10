@@ -16,7 +16,12 @@ package com.facebook.presto.catalog;
 import io.airlift.json.JsonCodec;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -74,7 +79,7 @@ public class CatalogResource
     {
         requireNonNull(catalogInfo, "catalogName is null");
         try (Connection connection = ConnectionConfig.openConnection(config);
-             PreparedStatement preparedStatement = connection.prepareStatement(ConnectionConfig.deleteCatalogSql)) {
+                PreparedStatement preparedStatement = connection.prepareStatement(ConnectionConfig.deleteCatalogSql)) {
             preparedStatement.setString(1, catalogInfo.getCatalogName());
             preparedStatement.setString(2, catalogInfo.getConnectorName());
             preparedStatement.setString(3, catalogInfo.getCreator());
